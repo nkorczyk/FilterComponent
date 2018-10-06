@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" 
+	creationComplete="init()" 
+	xmlns:components="com.codeofdoom.components.*">
+	<mx:VBox width="100%" paddingLeft="2" >
+		<mx:HBox>
+			<components:FilterSelector click="updateFilterList(event)" filter="{new StartsWithFilter('name', 'name')}"/>
+			<mx:Label text="Starts With..."/>
+			<mx:TextInput text="" id="nameText" />
+		</mx:HBox>
+		<mx:HBox>
+			<components:FilterSelector click="updateFilterList(event)" filter="{new DateFilter('date')}"/>
+			<mx:DateChooser selectedDate="{new Date(2009,0,1)}" id="startDate"/>
+			<mx:Spacer width="10"/>
+			<mx:DateChooser selectedDate="{new Date(2009,0,30)}" id="endDate"/>
+		</mx:HBox>
+		<mx:HBox>
+			<components:FilterSelector click="updateFilterList(event)" filter="{new IsEqualFilter('age', 'ageText')}"/>
+			<mx:Label text="Age..."/>
+			<mx:NumericStepper id="ageStepper" value="27" maximum="30" minimum="20" />
+		</mx:HBox>
+		<mx:Button label="Update Filter" id="submitButton" click="updateFilters(event)"/>
+		<mx:DataGrid id="grid" width="100%"  dataProvider="{_dataProvider}">
+			<mx:columns>
+				<mx:DataGridColumn dataField="name"/>
+				<mx:DataGridColumn dataField="age"/>
+				<mx:DataGridColumn dataField="date"/>
+			</mx:columns>
+		</mx:DataGrid>
+	</mx:VBox>
+	<mx:Script>
+		<![CDATA[
+			import com.codeofdoom.components.FilterSelector;
+			import com.codeofdoom.filters.DateFilter;
+			import com.codeofdoom.filters.IFilter;
+			import com.codeofdoom.filters.IsEqualFilter;
+			import com.codeofdoom.model.FilterModel;
+			import com.codeofdoom.filters.StartsWithFilter;
+			import mx.collections.ArrayCollection;
+			
+			[Bindable]
+			private var _dataProvider:ArrayCollection = new ArrayCollection([
+				{name:"bill", age:27, date:new Date(2009,0,1)},
+				{name:"rob", age:29, date:new Date(2009,0,12)},
+				{name:"foo", age:28, date:new Date(2009,0,5)},
+				{name:"bar" ,age:28, date:new Date(2009,0,19)},
+				{name:"baz", age:29, date:new Date(2009,0,25)}
+			]);
+			
+			private function init():void
+			{
+				FilterModel.getInstance().filterList = new ArrayCollection();
+				_dataProvider.filterFunction = filterFunction;
+			}
+			
+			private function updateFilters(e:MouseEvent):void
+			{
+				//Setting our model data
+				var fm:FilterModel = FilterModel.getInstance();
+				fm.ageText = ageStepper.value as int;
+				fm.name = nameText.text;
+				fm.startDate = startDate.selectedDate;
+				fm.endDate = endDate.selectedDate;				 
+				_dataProvider.refresh();
+			}
+			
+			private function updateFilterList(e:MouseEvent):void
+			{
+				//checks to see if the selector has been checked. adds it if i has, removes it if it hasnt 
+				var fm:FilterModel = FilterModel.getInstance();
+				if ((e.currentTarget as FilterSelector).selected)
+				{
+					fm.filterList.addItem((e.currentTarget as FilterSelector).filter);
+				}
+				else
+				{
+					var i:int = fm.filterList.getItemIndex((e.currentTarget as FilterSelector).filter);
+					fm.filterList.removeItemAt(i);
+				}
+			}
+			
+			public function filterFunction(item:Object):Boolean
+			{
+				for each (var f:IFilter in FilterModel.getInstance().filterList)
+				{
+					if (!f.filter(item))
+					{
+						return false;
+					}
+				}
+				return true;
+			}
+		]]>
+	</mx:Script>
+</mx:Application>
